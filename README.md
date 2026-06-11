@@ -4,8 +4,8 @@ AI agents and MCP clients increasingly invoke external tools and APIs on a user'
 
 This repository hosts an interactive overview page that maps this problem space — anchored to the **OWASP Top 10 for Agentic Applications 2026 (ASI01–ASI10)** — and shows how the building blocks we are working on fit into the larger picture.
 
-> **📄 See the full interactive page: [`agentic-security-hackathon-plan.html`](./agentic-security-hackathon-plan.html)**
-> The three views in the page are linked — click any block, requirement, or card to trace one thread across all of them, and filter by maturity. Open it locally in a browser, or via GitHub Pages if enabled.
+> **📄 View the full interactive page: [Live version](https://agent-security-labs.github.io/agentic-security-hackathon-plan/agentic-security-hackathon-plan.html) · [Source](./agentic-security-hackathon-plan.html)**
+> The three views in the page are linked — click any block, requirement, or card to trace one thread across all of them, and filter by maturity.
 
 ## The big picture
 
@@ -59,7 +59,7 @@ The same problem space, organised as twelve requirements across the request life
 
 🟢 Active focus · 🟡 Early-stage · ⚪ Open, welcome collaboration
 
-For the full descriptions, the cross-links between requirements, functions and work items, and the per-card details, **see the [interactive HTML page](./agentic-security-hackathon-plan.html)**.
+For the full descriptions, the cross-links between requirements, functions and work items, and the per-card details, **see the [interactive page](https://agent-security-labs.github.io/agentic-security-hackathon-plan/agentic-security-hackathon-plan.html)**.
 
 ## Collaborate with us
 
