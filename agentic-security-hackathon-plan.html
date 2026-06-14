@@ -1,0 +1,588 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Security for Agentic System and Tool Invocation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{
+ --ink:#0f2433;--ink2:#13202c;--muted:#5b6b7b;--dim:#7c8aa0;--line:#e3e8ee;--bg:#f6f8fa;--card:#fff;
+ --teal:#0f766e;--teal-bg:#e6f4f1;--amber:#b06a14;--amber-bg:#fdf3e3;--open:#7c8aa0;--open-bg:#eef1f5;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink2);font-family:'IBM Plex Sans','Segoe UI',sans-serif;
+ line-height:1.65;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:1080px;margin:0 auto;padding:0 26px 90px;}
+.mono{font-family:'IBM Plex Mono',monospace;}
+
+header.hero{padding:56px 0 30px;border-bottom:1px solid var(--line);margin-bottom:8px;}
+.eyebrow{font-family:'IBM Plex Mono',monospace;font-size:12px;letter-spacing:.14em;text-transform:uppercase;
+ color:var(--teal);font-weight:600;margin-bottom:14px;}
+h1{font-size:33px;line-height:1.2;margin:0 0 16px;font-weight:700;color:var(--ink);letter-spacing:-.01em;}
+.lede{font-size:16.5px;color:var(--muted);margin:0 0 6px;}
+.lede b{color:var(--ink2);font-weight:600;}
+.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:24px;}
+.toc a{font-family:'IBM Plex Mono',monospace;font-size:12px;text-decoration:none;color:var(--muted);
+ border:1px solid var(--line);background:var(--card);padding:5px 11px;border-radius:20px;}
+.toc a:hover{border-color:var(--teal);color:var(--teal);}
+
+/* ---- sticky interaction bar ---- */
+.ibar{position:sticky;top:0;z-index:50;background:rgba(246,248,250,.94);backdrop-filter:blur(8px);
+ border-bottom:1px solid var(--line);margin:0 -26px 0;padding:11px 26px;display:flex;align-items:center;
+ gap:14px;flex-wrap:wrap;}
+.ihint{font-size:12.5px;color:var(--muted);}
+.ihint b{color:var(--ink2);font-weight:600;}
+.ifilters{display:flex;gap:6px;margin-left:auto;}
+.ifilters button{font-family:'IBM Plex Mono',monospace;font-size:11.5px;border:1px solid var(--line);
+ background:var(--card);color:var(--muted);padding:5px 11px;border-radius:20px;cursor:pointer;transition:.15s;}
+.ifilters button:hover{border-color:var(--teal);color:var(--teal);}
+.ifilters button.on{background:var(--ink);color:#fff;border-color:var(--ink);}
+.idetail{flex-basis:100%;font-size:12.5px;color:var(--ink2);display:none;align-items:center;gap:8px;flex-wrap:wrap;}
+.idetail.show{display:flex;}
+.idetail .lbl{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--dim);letter-spacing:.05em;}
+.rpill{font-size:11.5px;border-radius:20px;padding:3px 10px;border:1px solid var(--line);background:var(--card);}
+.rpill .rk{font-family:'IBM Plex Mono',monospace;font-weight:600;margin-right:5px;}
+.rpill.s-active{border-color:#bfe6dd;background:var(--teal-bg);color:#0a4f49;}
+.rpill.s-early{border-color:#f0dab0;background:var(--amber-bg);color:#7a4a06;}
+.rpill.s-open{border-color:#dde3ea;background:var(--open-bg);color:#475569;}
+.iclear{display:none;font-family:'IBM Plex Mono',monospace;font-size:11.5px;border:1px solid var(--line);
+ background:var(--card);color:var(--muted);padding:5px 11px;border-radius:20px;cursor:pointer;}
+.iclear.show{display:inline-block;}
+.iclear:hover{border-color:#c2730a;color:#c2730a;}
+.tnav{display:inline-flex;align-items:center;gap:6px;margin-left:4px;padding-left:12px;border-left:1px solid var(--line);}
+.jump{font-family:'IBM Plex Mono',monospace;font-size:11px;border:1px solid var(--line);background:var(--card);
+ color:var(--muted);padding:3px 9px;border-radius:20px;cursor:pointer;transition:.15s;}
+.jump:hover{border-color:var(--teal);color:var(--teal);}
+
+section{margin-top:48px;scroll-margin-top:104px;}
+h2{font-size:21px;margin:0 0 6px;font-weight:700;color:var(--ink);letter-spacing:-.01em;}
+h2 .num{font-family:'IBM Plex Mono',monospace;color:var(--teal);font-size:15px;margin-right:10px;font-weight:600;}
+.sub{color:var(--muted);font-size:14.5px;margin:0 0 20px;}
+
+.figure{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px 22px 14px;
+ box-shadow:0 1px 2px rgba(15,36,51,.04);}
+.figcap{font-size:13px;color:var(--dim);margin-top:10px;font-family:'IBM Plex Mono',monospace;}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;}
+@media(max-width:820px){.grid{grid-template-columns:1fr;}}
+.col h3{font-size:13px;font-family:'IBM Plex Mono',monospace;letter-spacing:.06em;text-transform:uppercase;
+ margin:0 0 12px;display:flex;align-items:center;gap:8px;}
+.dot{width:11px;height:11px;border-radius:3px;display:inline-block;}
+.col.active h3{color:var(--teal);} .col.active .dot{background:var(--teal-bg);border:1.5px solid var(--teal);}
+.col.early h3{color:var(--amber);} .col.early .dot{background:var(--amber-bg);border:1.5px solid var(--amber);}
+.col.open h3{color:var(--open);} .col.open .dot{background:var(--open-bg);border:1.5px dashed var(--open);}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 15px;margin-bottom:11px;
+ border-left:3px solid var(--line);}
+.card.active{border-left-color:var(--teal);} .card.early{border-left-color:var(--amber);}
+.card.open{border-left-color:var(--open);}
+.ct{font-weight:600;color:var(--ink);font-size:14px;}
+.cn{font-size:12.8px;color:var(--muted);margin:4px 0 7px;line-height:1.5;}
+.co{font-family:'IBM Plex Mono',monospace;font-size:10.5px;color:var(--dim);letter-spacing:.04em;}
+
+/* ---- interaction highlight / dim ---- */
+[data-keys]{cursor:pointer;transition:opacity .16s ease, box-shadow .16s ease, transform .16s ease;}
+svg .node{transition:opacity .16s ease;}
+body.linking [data-keys]:not(.match),body.linking svg .node:not(.match){opacity:.16;}
+svg .node.match .box{stroke-width:3.4px;}
+svg .node.match{filter:drop-shadow(0 1px 5px rgba(15,118,110,.45));}
+.card.match{transform:translateY(-1px);}
+.card.active.match{box-shadow:0 0 0 2px var(--teal);}
+.card.early.match{box-shadow:0 0 0 2px var(--amber);}
+.card.open.match{box-shadow:0 0 0 2px var(--open);}
+
+/* ---- standards alignment table ---- */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px;background:var(--card);box-shadow:0 1px 2px rgba(15,36,51,.04);}
+table.std{border-collapse:collapse;width:100%;font-size:13px;min-width:880px;}
+table.std thead th{background:#0f2433;color:#dfe8ef;text-align:left;padding:11px 14px;font-size:11px;
+ letter-spacing:.04em;text-transform:uppercase;font-family:'IBM Plex Mono',monospace;font-weight:600;}
+table.std td{padding:12px 14px;border-top:1px solid var(--line);vertical-align:top;line-height:1.5;}
+.srow{cursor:pointer;transition:opacity .16s ease;}
+.bcell{font-weight:600;color:var(--ink);min-width:200px;}
+.rk{font-family:'IBM Plex Mono',monospace;color:var(--teal);margin-right:4px;}
+.srow.early .rk{color:var(--amber);} .srow.open .rk{color:var(--open);}
+.mono2{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#3a4a58;}
+.ietf{font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:#0a5f57;font-weight:500;}
+.dimcell{color:var(--dim);font-style:italic;font-size:12px;}
+.stp{font-family:'IBM Plex Mono',monospace;font-size:10px;padding:2px 7px;border-radius:20px;margin-left:4px;white-space:nowrap;}
+.stp.s-active{background:var(--teal-bg);color:#0a4f49;border:1px solid #bfe6dd;}
+.stp.s-early{background:var(--amber-bg);color:#7a4a06;border:1px solid #f0dab0;}
+.stp.s-open{background:var(--open-bg);color:#475569;border:1px solid #dde3ea;}
+.srow.active td:first-child{box-shadow:inset 3px 0 0 var(--teal);}
+.srow.early td:first-child{box-shadow:inset 3px 0 0 var(--amber);}
+.srow.open td:first-child{box-shadow:inset 3px 0 0 var(--open);}
+.srow.match td{background:#eafaf6;}
+.srow.match td:first-child{box-shadow:inset 3px 0 0 var(--teal);}
+
+.collab{background:#0f2433;color:#e7eef4;border-radius:16px;padding:28px 30px;margin-top:8px;}
+.collab h3{margin:0 0 10px;font-size:18px;color:#fff;font-weight:600;}
+.collab p{margin:0 0 10px;color:#c5d2dd;font-size:15px;max-width:74ch;}
+.collab b{color:#5fd6c4;}
+.collab .meta{font-family:'IBM Plex Mono',monospace;font-size:12px;color:#9fb3c4;margin-top:14px;letter-spacing:.04em;}
+
+footer{margin-top:60px;padding-top:24px;border-top:1px solid var(--line);color:var(--dim);
+ font-size:12.5px;font-family:'IBM Plex Mono',monospace;line-height:1.7;}
+</style></head>
+<body><div class="wrap">
+
+<header class="hero">
+ <div class="eyebrow">Agentic Security · IETF Hackathon</div>
+ <h1>Security for Agentic System and Tool Invocation</h1>
+ <p class="lede">AI agents and MCP clients increasingly invoke external tools and APIs on a user’s behalf. Doing this safely calls for a set of <b>security functions</b>: establishing who an agent is, what it is allowed to do, where a request came from, whether a sensitive action should proceed, and leaving an auditable trail.</p>
+ <p class="lede">This page maps that problem space — anchored to the <b>OWASP Top 10 for Agentic Applications 2026 (ASI01–ASI10)</b> — and shows how the building blocks we are working on fit into the larger picture. The three views below are linked: <b>click any block, requirement or card</b> to trace one thread across all of them.</p>
+ <nav class="toc">
+  <a href="#picture">The big picture</a>
+  <a href="#landscape">Requirements landscape</a>
+  <a href="#focus">What we work on</a>
+  <a href="#collab">Collaborate</a>
+ </nav>
+</header>
+
+<div class="ibar">
+ <span class="ihint"><b>Linked views.</b> Click a block, requirement or card to highlight the same thread everywhere; filter by maturity on the right.</span>
+ <span class="ifilters">
+  <button data-status="all" class="on">All</button>
+  <button data-status="active">Active</button>
+  <button data-status="early">Early</button>
+  <button data-status="open">Open</button>
+ </span>
+ <button class="iclear">Clear ×</button>
+ <span class="idetail"></span>
+</div>
+
+<section id="picture">
+ <h2><span class="num">01</span>How the pieces fit together</h2>
+ <p class="sub">A single tool call from an agent passes through several security functions — verifying identity and credentials, checking authorization, validating intent and provenance, reaching a policy decision, then enforcing and recording it. Click any block to see the matching requirement and work item; the open areas at the bottom are where we are looking for collaborators.</p>
+ <div class="figure">
+  <svg style="width:100%;height:auto;display:block" viewBox="0 0 1200 700" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans','Segoe UI',sans-serif">
+<defs>
+<marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#475569"/></marker>
+<marker id="ad" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#b9a06a"/></marker>
+<style>.c{font-family:'IBM Plex Mono',monospace;}</style></defs>
+<rect width="1200" height="700" fill="#ffffff"/>
+<text x="36" y="40" font-size="24" font-weight="700" fill="#0f2433">Agentic security functions</text>
+<text x="36" y="64" font-size="14" fill="#5b6b7b" class="c">How an agent’s tool call is checked, authorized and recorded — and where we welcome collaboration</text>
+<rect x="36" y="88" width="1128" height="92" rx="14" fill="#f3f7ff" stroke="#d4e3fb" stroke-width="1.4"/>
+<text x="54" y="110" font-size="11.5" font-weight="700" letter-spacing="1.2" fill="#1e40af" class="c">WHAT THE AGENT / MCP CLIENT PRESENTS</text>
+<g class="node" data-keys="r1,r2">
+<rect class="box" x="60.0" y="122" width="345.3333333333333" height="44" rx="10" fill="#e9f1ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="232.66666666666666" y="141.5" font-size="13" font-weight="600" fill="#1e3a8a" text-anchor="middle">Identity &amp; credentials</text>
+<text x="232.66666666666666" y="160.5" font-size="11" fill="#1e3a8a" text-anchor="middle" class="c" opacity="0.8">DID / VC / VP</text>
+</g>
+<g class="node" data-keys="r3,r7">
+<rect class="box" x="427.3333333333333" y="122" width="345.3333333333333" height="44" rx="10" fill="#e9f1ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="600.0" y="141.5" font-size="13" font-weight="600" fill="#1e3a8a" text-anchor="middle">Authorization tokens</text>
+<text x="600.0" y="160.5" font-size="11" fill="#1e3a8a" text-anchor="middle" class="c" opacity="0.8">OAuth</text>
+</g>
+<g class="node" data-keys="r4">
+<rect class="box" x="794.6666666666666" y="122" width="345.3333333333333" height="44" rx="10" fill="#e9f1ff" stroke="#2563eb" stroke-width="1.5"/>
+<text x="967.3333333333333" y="141.5" font-size="13" font-weight="600" fill="#1e3a8a" text-anchor="middle">Intent &amp; trigger-source</text>
+<text x="967.3333333333333" y="160.5" font-size="11" fill="#1e3a8a" text-anchor="middle" class="c" opacity="0.8">provenance + confirmation</text>
+</g>
+<line x1="600.0" y1="180" x2="600.0" y2="202" stroke="#475569" stroke-width="2.2" marker-end="url(#ar)"/>
+<rect x="36" y="202" width="1128" height="128" rx="14" fill="#effaf7" stroke="#bfe6dd" stroke-width="1.4"/>
+<text x="54" y="224" font-size="11.5" font-weight="700" letter-spacing="1.2" fill="#0a4f49" class="c">SECURITY FUNCTIONS · VERIFY → DECIDE → ENFORCE</text>
+<g class="node" data-keys="r1,r2">
+<rect class="box" x="60.0" y="242" width="247.5" height="64" rx="10" fill="#d9f0ea" stroke="#0f766e" stroke-width="1.5"/>
+<text x="183.75" y="271.5" font-size="12.5" font-weight="600" fill="#0a4f49" text-anchor="middle">Verify identity &amp; credentials</text>
+<text x="183.75" y="290.5" font-size="11" fill="#0a4f49" text-anchor="middle" class="c" opacity="0.8">DID/VC/VP</text>
+</g>
+<g class="node" data-keys="r3,r7">
+<rect class="box" x="337.5" y="242" width="247.5" height="64" rx="10" fill="#d9f0ea" stroke="#0f766e" stroke-width="1.5"/>
+<text x="461.25" y="263.0" font-size="12.5" font-weight="600" fill="#0a4f49" text-anchor="middle">Check authorization &amp;</text>
+<text x="461.25" y="280.0" font-size="12.5" font-weight="600" fill="#0a4f49" text-anchor="middle">capability</text>
+<text x="461.25" y="299.0" font-size="11" fill="#0a4f49" text-anchor="middle" class="c" opacity="0.8">OAuth / capability VC</text>
+</g>
+<line x1="311.5" y1="274.0" x2="333.5" y2="274.0" stroke="#0f766e" stroke-width="2" marker-end="url(#ar)"/>
+<g class="node" data-keys="r4">
+<rect class="box" x="615.0" y="242" width="247.5" height="64" rx="10" fill="#d9f0ea" stroke="#0f766e" stroke-width="1.5"/>
+<text x="738.75" y="271.5" font-size="12.5" font-weight="600" fill="#0a4f49" text-anchor="middle">Validate intent &amp; provenance</text>
+<text x="738.75" y="290.5" font-size="11" fill="#0a4f49" text-anchor="middle" class="c" opacity="0.8">trigger-source</text>
+</g>
+<line x1="589.0" y1="274.0" x2="611.0" y2="274.0" stroke="#0f766e" stroke-width="2" marker-end="url(#ar)"/>
+<g class="node" data-keys="r7,r8">
+<rect class="box" x="892.5" y="242" width="247.5" height="64" rx="10" fill="#d9f0ea" stroke="#0f766e" stroke-width="1.5"/>
+<text x="1016.25" y="271.5" font-size="12.5" font-weight="600" fill="#0a4f49" text-anchor="middle">Policy decision</text>
+<text x="1016.25" y="290.5" font-size="11" fill="#0a4f49" text-anchor="middle" class="c" opacity="0.8">least privilege</text>
+</g>
+<line x1="866.5" y1="274.0" x2="888.5" y2="274.0" stroke="#0f766e" stroke-width="2" marker-end="url(#ar)"/>
+<line x1="600.0" y1="330" x2="600.0" y2="352" stroke="#475569" stroke-width="2.2" marker-end="url(#ar)"/>
+<g class="node" data-keys="r7,r8">
+<rect class="box" x="36" y="352" width="664.8" height="86" rx="10" fill="#d9f0ea" stroke="#0f766e" stroke-width="1.5"/>
+<text x="368.4" y="392.5" font-size="14" font-weight="600" fill="#0a4f49" text-anchor="middle">Authorized tool / MCP invocation</text>
+<text x="368.4" y="411.5" font-size="11" fill="#0a4f49" text-anchor="middle" class="c" opacity="0.8">only on an Allow decision</text>
+<text x="690.8" y="368" font-size="9.5" font-weight="700" letter-spacing="0.6" fill="#0a4f49" text-anchor="end" class="c" opacity="0.85">ENFORCE</text>
+</g>
+<g class="node" data-keys="r10">
+<rect class="box" x="724.8" y="352" width="439.20000000000005" height="86" rx="10" fill="#d9f0ea" stroke="#0f766e" stroke-width="1.5"/>
+<text x="944.4" y="392.5" font-size="14" font-weight="600" fill="#0a4f49" text-anchor="middle">Audit &amp; evidence chain</text>
+<text x="944.4" y="411.5" font-size="11" fill="#0a4f49" text-anchor="middle" class="c" opacity="0.8">replayable record</text>
+<text x="1154.0" y="368" font-size="9.5" font-weight="700" letter-spacing="0.6" fill="#0a4f49" text-anchor="end" class="c" opacity="0.85">OBSERVE</text>
+</g>
+<path d="M700.8 395.0 H724.8" fill="none" stroke="#0f766e" stroke-width="1.6" stroke-dasharray="4 3"/>
+<path d="M944.4 330 V352" fill="none" stroke="#b9a06a" stroke-width="1.6" stroke-dasharray="4 3" marker-end="url(#ad)"/>
+<rect x="36" y="468" width="1128" height="120" rx="14" fill="#f7f8fa" stroke="#dde3ea" stroke-width="1.4" stroke-dasharray="6 5"/>
+<text x="54" y="490" font-size="11.5" font-weight="700" letter-spacing="1.2" fill="#56657a" class="c">OPEN AREAS · WE WELCOME COLLABORATION</text>
+<g class="node" data-keys="r9">
+<rect class="box" x="60.0" y="508" width="203.2" height="60" rx="10" fill="#eef1f5" stroke="#9aa7b5" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="161.6" y="526.5" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">Memory /</text>
+<text x="161.6" y="543.5" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">context-poisoning</text>
+<text x="161.6" y="560.5" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">defense</text>
+</g>
+<g class="node" data-keys="r11">
+<rect class="box" x="279.2" y="508" width="203.2" height="60" rx="10" fill="#eef1f5" stroke="#9aa7b5" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="380.79999999999995" y="535.0" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">Runtime containment /</text>
+<text x="380.79999999999995" y="552.0" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">kill-switch</text>
+</g>
+<g class="node" data-keys="r12">
+<rect class="box" x="498.4" y="508" width="203.2" height="60" rx="10" fill="#eef1f5" stroke="#9aa7b5" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="600.0" y="535.0" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">3rd-party MCP</text>
+<text x="600.0" y="552.0" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">attestation</text>
+</g>
+<g class="node" data-keys="r6">
+<rect class="box" x="717.5999999999999" y="508" width="203.2" height="60" rx="10" fill="#eef1f5" stroke="#9aa7b5" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="819.1999999999999" y="535.0" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">Goal / instruction</text>
+<text x="819.1999999999999" y="552.0" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">integrity</text>
+</g>
+<g class="node" data-keys="r5">
+<rect class="box" x="936.8" y="508" width="203.2" height="60" rx="10" fill="#eef1f5" stroke="#9aa7b5" stroke-width="1.5" stroke-dasharray="5 4"/>
+<text x="1038.3999999999999" y="535.0" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">Inter-agent / MCP</text>
+<text x="1038.3999999999999" y="552.0" font-size="12" font-weight="600" fill="#475569" text-anchor="middle">channel trust</text>
+</g>
+<rect x="36" y="606" width="20" height="15" rx="4" fill="#e9f1ff" stroke="#2563eb" stroke-width="1.3"/>
+<text x="64" y="618" font-size="12" fill="#3a4a58">What the agent presents</text>
+<rect x="249.79999999999998" y="606" width="20" height="15" rx="4" fill="#d9f0ea" stroke="#0f766e" stroke-width="1.3"/>
+<text x="277.79999999999995" y="618" font-size="12" fill="#3a4a58">Our active building blocks</text>
+<rect x="483.4" y="606" width="20" height="15" rx="4" fill="#eef1f5" stroke="#9aa7b5" stroke-width="1.3" stroke-dasharray="4 3"/>
+<text x="511.4" y="618" font-size="12" fill="#3a4a58">Open · welcome collaboration</text>
+</svg>
+  <div class="figcap">Blue = what the agent presents · teal = our active building blocks · grey-dashed = open, welcome collaboration.</div>
+ </div>
+</section>
+
+<section id="landscape">
+ <h2><span class="num">02</span>The security requirements landscape</h2>
+ <p class="sub">The same problem space, organised as twelve requirements across the request lifecycle and mapped to the OWASP ASI risks each one addresses. Click a requirement to see the security function it belongs to and our work on it.</p>
+ <div class="figure">
+  <svg style="width:100%;height:auto;display:block" viewBox="0 0 1280 800" xmlns="http://www.w3.org/2000/svg" font-family="'IBM Plex Sans','Segoe UI',sans-serif">
+<defs><marker id="arr" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="#334155"/></marker>
+<style>.code{font-family:'IBM Plex Mono',monospace;}</style></defs>
+<rect width="1280" height="800" fill="#ffffff"/>
+<text x="40" y="40" font-size="24" font-weight="700" fill="#0f2433">Security requirements across the agentic security landscape</text>
+<text x="40" y="64" font-size="14" fill="#5b6b7b" class="code">Mapped to OWASP Top 10 for Agentic Applications 2026 (ASI01–ASI10)</text>
+<rect x="36.0" y="92" width="282.5" height="46" rx="9" fill="#0f2433"/>
+<text x="52.0" y="111" font-size="11" font-weight="700" letter-spacing="1.5" fill="#5fd2c0" class="code">STAGE 1</text>
+<text x="52.0" y="129" font-size="13.5" font-weight="600" fill="#ffffff">Identity &amp; Trust</text>
+<line x1="321.5" y1="115.0" x2="341.5" y2="115.0" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+<g class="node" data-keys="r1">
+<rect class="box" x="36.0" y="168" width="282.5" height="150" rx="11" fill="#d6f1ea" stroke="#0f766e" stroke-width="1.4"/>
+<rect x="36.0" y="168" width="7" height="150" rx="3.5" fill="#0f9b8a"/>
+<rect x="54.0" y="184" width="40" height="22" rx="6" fill="#0f9b8a"/>
+<text x="74.0" y="199" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R1</text>
+<text x="302.5" y="199" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#0a4f49" text-anchor="end" class="code">ACTIVE</text>
+<text x="54.0" y="228" font-size="15" font-weight="700" fill="#13202c">Agent / MCP identity</text>
+<text x="54.0" y="253" font-size="11.5" fill="#475563">Establish a verifiable identity</text>
+<text x="54.0" y="268" font-size="11.5" fill="#475563">for the agent and MCP client</text>
+<rect x="54.0" y="294" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="76" y="306.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI03</text>
+<rect x="104.0" y="294" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="126" y="306.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI09</text>
+</g>
+<g class="node" data-keys="r2">
+<rect class="box" x="36.0" y="342" width="282.5" height="150" rx="11" fill="#d6f1ea" stroke="#0f766e" stroke-width="1.4"/>
+<rect x="36.0" y="342" width="7" height="150" rx="3.5" fill="#0f9b8a"/>
+<rect x="54.0" y="358" width="40" height="22" rx="6" fill="#0f9b8a"/>
+<text x="74.0" y="373" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R2</text>
+<text x="302.5" y="373" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#0a4f49" text-anchor="end" class="code">ACTIVE</text>
+<text x="54.0" y="402" font-size="15" font-weight="700" fill="#13202c">Credentials &amp; lifecycle</text>
+<text x="54.0" y="427" font-size="11.5" fill="#475563">DID / VC / VP, tokens, capability</text>
+<text x="54.0" y="442" font-size="11.5" fill="#475563">VC: issued and status-tracked</text>
+<rect x="54.0" y="468" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="76" y="480.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI03</text>
+</g>
+<g class="node" data-keys="r3">
+<rect class="box" x="36.0" y="516" width="282.5" height="150" rx="11" fill="#fdedcf" stroke="#c2730a" stroke-width="1.4"/>
+<rect x="36.0" y="516" width="7" height="150" rx="3.5" fill="#d98a14"/>
+<rect x="54.0" y="532" width="40" height="22" rx="6" fill="#d98a14"/>
+<text x="74.0" y="547" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R3</text>
+<text x="302.5" y="547" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#7a4a06" text-anchor="end" class="code">EARLY</text>
+<text x="54.0" y="576" font-size="15" font-weight="700" fill="#13202c">Capability scoping</text>
+<text x="54.0" y="601" font-size="11.5" fill="#475563">Agent authorization + user-to-agent</text>
+<text x="54.0" y="616" font-size="11.5" fill="#475563">delegated consent (~ user consent)</text>
+<rect x="54.0" y="642" width="43" height="18" rx="9" fill="#ffffff" stroke="#c2730a" stroke-width="1"/>
+<text x="76" y="654.5" font-size="10" font-weight="700" fill="#7a4a06" text-anchor="middle" class="code">ASI03</text>
+</g>
+<rect x="344.5" y="92" width="282.5" height="46" rx="9" fill="#0f2433"/>
+<text x="360.5" y="111" font-size="11" font-weight="700" letter-spacing="1.5" fill="#5fd2c0" class="code">STAGE 2</text>
+<text x="360.5" y="129" font-size="13.5" font-weight="600" fill="#ffffff">Request Provenance</text>
+<line x1="630.0" y1="115.0" x2="650.0" y2="115.0" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+<g class="node" data-keys="r4">
+<rect class="box" x="344.5" y="168" width="282.5" height="150" rx="11" fill="#d6f1ea" stroke="#0f766e" stroke-width="1.4"/>
+<rect x="344.5" y="168" width="7" height="150" rx="3.5" fill="#0f9b8a"/>
+<rect x="362.5" y="184" width="40" height="22" rx="6" fill="#0f9b8a"/>
+<text x="382.5" y="199" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R4</text>
+<text x="611.0" y="199" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#0a4f49" text-anchor="end" class="code">ACTIVE</text>
+<text x="362.5" y="228" font-size="15" font-weight="700" fill="#13202c">Trigger-source &amp;</text>
+<text x="362.5" y="247" font-size="15" font-weight="700" fill="#13202c">confirmation</text>
+<text x="362.5" y="272" font-size="11.5" fill="#475563">User vs agent vs delegated; bind</text>
+<text x="362.5" y="287" font-size="11.5" fill="#475563">provenance, confirm when needed</text>
+<rect x="362.5" y="294" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="384" y="306.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI01</text>
+<rect x="412.5" y="294" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="434" y="306.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI09</text>
+</g>
+<g class="node" data-keys="r5">
+<rect class="box" x="344.5" y="342" width="282.5" height="150" rx="11" fill="#fdedcf" stroke="#c2730a" stroke-width="1.4"/>
+<rect x="344.5" y="342" width="7" height="150" rx="3.5" fill="#d98a14"/>
+<rect x="362.5" y="358" width="40" height="22" rx="6" fill="#d98a14"/>
+<text x="382.5" y="373" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R5</text>
+<text x="611.0" y="373" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#7a4a06" text-anchor="end" class="code">EARLY</text>
+<text x="362.5" y="402" font-size="15" font-weight="700" fill="#13202c">Channel trust</text>
+<text x="362.5" y="427" font-size="11.5" fill="#475563">End-to-end assurance of the agent</text>
+<text x="362.5" y="442" font-size="11.5" fill="#475563">/ MCP transport channel</text>
+<rect x="362.5" y="468" width="43" height="18" rx="9" fill="#ffffff" stroke="#c2730a" stroke-width="1"/>
+<text x="384" y="480.5" font-size="10" font-weight="700" fill="#7a4a06" text-anchor="middle" class="code">ASI07</text>
+</g>
+<g class="node" data-keys="r6">
+<rect class="box" x="344.5" y="516" width="282.5" height="150" rx="11" fill="#eef1f5" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4"/>
+<rect x="344.5" y="516" width="7" height="150" rx="3.5" fill="#94a3b8"/>
+<rect x="362.5" y="532" width="40" height="22" rx="6" fill="#94a3b8"/>
+<text x="382.5" y="547" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R6</text>
+<text x="611.0" y="547" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#475569" text-anchor="end" class="code">OPEN</text>
+<text x="362.5" y="576" font-size="15" font-weight="700" fill="#13202c">Goal / instruction</text>
+<text x="362.5" y="595" font-size="15" font-weight="700" fill="#13202c">integrity</text>
+<text x="362.5" y="620" font-size="11.5" fill="#475563">Detect goal drift and injected</text>
+<text x="362.5" y="635" font-size="11.5" fill="#475563">instructions</text>
+<rect x="362.5" y="642" width="43" height="18" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+<text x="384" y="654.5" font-size="10" font-weight="700" fill="#475569" text-anchor="middle" class="code">ASI01</text>
+</g>
+<rect x="653.0" y="92" width="282.5" height="46" rx="9" fill="#0f2433"/>
+<text x="669.0" y="111" font-size="11" font-weight="700" letter-spacing="1.5" fill="#5fd2c0" class="code">STAGE 3</text>
+<text x="669.0" y="129" font-size="13.5" font-weight="600" fill="#ffffff">Tool Access Safety</text>
+<line x1="938.5" y1="115.0" x2="958.5" y2="115.0" stroke="#334155" stroke-width="2" marker-end="url(#arr)"/>
+<g class="node" data-keys="r7">
+<rect class="box" x="653.0" y="168" width="282.5" height="150" rx="11" fill="#d6f1ea" stroke="#0f766e" stroke-width="1.4"/>
+<rect x="653.0" y="168" width="7" height="150" rx="3.5" fill="#0f9b8a"/>
+<rect x="671.0" y="184" width="40" height="22" rx="6" fill="#0f9b8a"/>
+<text x="691.0" y="199" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R7</text>
+<text x="919.5" y="199" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#0a4f49" text-anchor="end" class="code">ACTIVE</text>
+<text x="671.0" y="228" font-size="15" font-weight="700" fill="#13202c">Tool authorization</text>
+<text x="671.0" y="253" font-size="11.5" fill="#475563">Sensitive tools execute only after</text>
+<text x="671.0" y="268" font-size="11.5" fill="#475563">an explicit policy decision</text>
+<rect x="671.0" y="294" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="692" y="306.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI02</text>
+<rect x="721.0" y="294" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="742" y="306.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI03</text>
+</g>
+<g class="node" data-keys="r8">
+<rect class="box" x="653.0" y="342" width="282.5" height="150" rx="11" fill="#d6f1ea" stroke="#0f766e" stroke-width="1.4"/>
+<rect x="653.0" y="342" width="7" height="150" rx="3.5" fill="#0f9b8a"/>
+<rect x="671.0" y="358" width="40" height="22" rx="6" fill="#0f9b8a"/>
+<text x="691.0" y="373" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R8</text>
+<text x="919.5" y="373" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#0a4f49" text-anchor="end" class="code">ACTIVE</text>
+<text x="671.0" y="402" font-size="15" font-weight="700" fill="#13202c">Sensitive-data handling</text>
+<text x="671.0" y="427" font-size="11.5" fill="#475563">Processed as ciphertext,</text>
+<text x="671.0" y="442" font-size="11.5" fill="#475563">without plaintext visibility</text>
+<rect x="671.0" y="468" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="692" y="480.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI02</text>
+<rect x="721.0" y="468" width="43" height="18" rx="9" fill="#ffffff" stroke="#0f766e" stroke-width="1"/>
+<text x="742" y="480.5" font-size="10" font-weight="700" fill="#0a4f49" text-anchor="middle" class="code">ASI06</text>
+</g>
+<g class="node" data-keys="r9">
+<rect class="box" x="653.0" y="516" width="282.5" height="150" rx="11" fill="#eef1f5" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4"/>
+<rect x="653.0" y="516" width="7" height="150" rx="3.5" fill="#94a3b8"/>
+<rect x="671.0" y="532" width="40" height="22" rx="6" fill="#94a3b8"/>
+<text x="691.0" y="547" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R9</text>
+<text x="919.5" y="547" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#475569" text-anchor="end" class="code">OPEN</text>
+<text x="671.0" y="576" font-size="15" font-weight="700" fill="#13202c">Context-poisoning defense</text>
+<text x="671.0" y="601" font-size="11.5" fill="#475563">Provenance and integrity of memory</text>
+<text x="671.0" y="616" font-size="11.5" fill="#475563">and retrieved context</text>
+<rect x="671.0" y="642" width="43" height="18" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+<text x="692" y="654.5" font-size="10" font-weight="700" fill="#475569" text-anchor="middle" class="code">ASI06</text>
+</g>
+<rect x="961.5" y="92" width="282.5" height="46" rx="9" fill="#0f2433"/>
+<text x="977.5" y="111" font-size="11" font-weight="700" letter-spacing="1.5" fill="#5fd2c0" class="code">STAGE 4</text>
+<text x="977.5" y="129" font-size="13.5" font-weight="600" fill="#ffffff">Monitoring</text>
+<g class="node" data-keys="r10">
+<rect class="box" x="961.5" y="168" width="282.5" height="150" rx="11" fill="#fdedcf" stroke="#c2730a" stroke-width="1.4"/>
+<rect x="961.5" y="168" width="7" height="150" rx="3.5" fill="#d98a14"/>
+<rect x="979.5" y="184" width="40" height="22" rx="6" fill="#d98a14"/>
+<text x="999.5" y="199" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R10</text>
+<text x="1228.0" y="199" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#7a4a06" text-anchor="end" class="code">EARLY</text>
+<text x="979.5" y="228" font-size="15" font-weight="700" fill="#13202c">Audit &amp; evidence</text>
+<text x="979.5" y="253" font-size="11.5" fill="#475563">Replayable chain: request,</text>
+<text x="979.5" y="268" font-size="11.5" fill="#475563">verification, decision, execution</text>
+<rect x="979.5" y="294" width="43" height="18" rx="9" fill="#ffffff" stroke="#c2730a" stroke-width="1"/>
+<text x="1001" y="306.5" font-size="10" font-weight="700" fill="#7a4a06" text-anchor="middle" class="code">ASI10</text>
+</g>
+<g class="node" data-keys="r11">
+<rect class="box" x="961.5" y="342" width="282.5" height="150" rx="11" fill="#eef1f5" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4"/>
+<rect x="961.5" y="342" width="7" height="150" rx="3.5" fill="#94a3b8"/>
+<rect x="979.5" y="358" width="40" height="22" rx="6" fill="#94a3b8"/>
+<text x="999.5" y="373" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R11</text>
+<text x="1228.0" y="373" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#475569" text-anchor="end" class="code">OPEN</text>
+<text x="979.5" y="402" font-size="15" font-weight="700" fill="#13202c">Runtime containment</text>
+<text x="979.5" y="427" font-size="11.5" fill="#475563">Contain dangerous execution,</text>
+<text x="979.5" y="442" font-size="11.5" fill="#475563">cascading failures, rogue agents</text>
+<rect x="979.5" y="468" width="43" height="18" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+<text x="1001" y="480.5" font-size="10" font-weight="700" fill="#475569" text-anchor="middle" class="code">ASI05</text>
+<rect x="1029.5" y="468" width="43" height="18" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+<text x="1051" y="480.5" font-size="10" font-weight="700" fill="#475569" text-anchor="middle" class="code">ASI08</text>
+<rect x="1079.5" y="468" width="43" height="18" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+<text x="1101" y="480.5" font-size="10" font-weight="700" fill="#475569" text-anchor="middle" class="code">ASI10</text>
+</g>
+<g class="node" data-keys="r12">
+<rect class="box" x="961.5" y="516" width="282.5" height="150" rx="11" fill="#eef1f5" stroke="#94a3b8" stroke-width="1.4" stroke-dasharray="5 4"/>
+<rect x="961.5" y="516" width="7" height="150" rx="3.5" fill="#94a3b8"/>
+<rect x="979.5" y="532" width="40" height="22" rx="6" fill="#94a3b8"/>
+<text x="999.5" y="547" font-size="12.5" font-weight="700" fill="#ffffff" text-anchor="middle" class="code">R12</text>
+<text x="1228.0" y="547" font-size="10.5" font-weight="700" letter-spacing="0.8" fill="#475569" text-anchor="end" class="code">OPEN</text>
+<text x="979.5" y="576" font-size="15" font-weight="700" fill="#13202c">MCP attestation</text>
+<text x="979.5" y="601" font-size="11.5" fill="#475563">Attest and vet external MCP</text>
+<text x="979.5" y="616" font-size="11.5" fill="#475563">servers, tools and schemas</text>
+<rect x="979.5" y="642" width="43" height="18" rx="9" fill="#ffffff" stroke="#94a3b8" stroke-width="1"/>
+<text x="1001" y="654.5" font-size="10" font-weight="700" fill="#475569" text-anchor="middle" class="code">ASI04</text>
+</g>
+<text x="36" y="696" font-size="12" font-weight="700" fill="#33414f" class="code">STATUS</text>
+<rect x="116" y="681" width="20" height="16" rx="4" fill="#d6f1ea" stroke="#0f766e" stroke-width="1.3"/>
+<text x="144" y="694" font-size="12" fill="#3a4a58">Active focus</text>
+<rect x="254.4" y="681" width="20" height="16" rx="4" fill="#fdedcf" stroke="#c2730a" stroke-width="1.3"/>
+<text x="282.4" y="694" font-size="12" fill="#3a4a58">Early-stage</text>
+<rect x="386.1" y="681" width="20" height="16" rx="4" fill="#eef1f5" stroke="#94a3b8" stroke-width="1.3" stroke-dasharray="4 3"/>
+<text x="414.1" y="694" font-size="12" fill="#3a4a58">Open · welcome collaboration</text>
+<text x="1244" y="694" font-size="11" fill="#8a98a6" text-anchor="end" class="code">Stages flow left → right along the request lifecycle</text>
+</svg>
+  <div class="figcap">Teal = active focus · amber = early-stage · grey-dashed = open, welcome collaboration.</div>
+ </div>
+</section>
+
+<section id="focus">
+ <h2><span class="num">03</span>What we are working on — and what is open</h2>
+ <p class="sub">The building blocks we are actively developing, the early-stage ones, and the open areas where contributions are most welcome. Each card links back to its place in the two figures above.</p>
+ <div class="grid">
+  <div class="col active"><h3><span class="dot"></span>Active building blocks</h3><div class="card node active" data-keys="r1">
+<div class="ct">Agent &amp; MCP identity</div><div class="cn">A verifiable identity for both the calling agent and the MCP client.</div><div class="co">ASI03 · ASI09</div></div>
+<div class="card node active" data-keys="r2">
+<div class="ct">Credentials &amp; lifecycle</div><div class="cn">DID / VC / VP, authorization tokens and capability VCs, issued and status-tracked.</div><div class="co">ASI03</div></div>
+<div class="card node active" data-keys="r4">
+<div class="ct">Trigger-source binding &amp; confirmation</div><div class="cn">Distinguishing user-, agent- and delegated requests, with confirmation where needed.</div><div class="co">ASI01 · ASI09</div></div>
+<div class="card node active" data-keys="r7">
+<div class="ct">Tool authorization</div><div class="cn">Sensitive tools execute only after an explicit policy decision.</div><div class="co">ASI02 · ASI03</div></div>
+<div class="card node active" data-keys="r8">
+<div class="ct">Sensitive-data handling</div><div class="cn">Sensitive data is processed as ciphertext, without plaintext visibility.</div><div class="co">ASI02 · ASI06</div></div>
+</div>
+  <div class="col early"><h3><span class="dot"></span>Early-stage</h3><div class="card node early" data-keys="r5">
+<div class="ct">Inter-agent / MCP channel trust</div><div class="cn">End-to-end assurance of the agent-to-agent and MCP transport channel.</div><div class="co">ASI07</div></div>
+<div class="card node early" data-keys="r3">
+<div class="ct">Capability scoping</div><div class="cn">Both the agent's own authorization and the user-to-agent delegated authorization (the IETF analogue of user consent) — scoping authority to least-agency, not just what it can reach.</div><div class="co">ASI03</div></div>
+<div class="card node early" data-keys="r10">
+<div class="ct">Audit &amp; evidence chain</div><div class="cn">A replayable record across request, verification, decision and execution.</div><div class="co">ASI10</div></div>
+</div>
+  <div class="col open"><h3><span class="dot"></span>Open · welcome collaboration</h3><div class="card node open" data-keys="r6">
+<div class="ct">Goal / instruction integrity</div><div class="cn">Detecting goal drift and injected instructions.</div><div class="co">ASI01</div></div>
+<div class="card node open" data-keys="r9">
+<div class="ct">Memory / context-poisoning defense</div><div class="cn">Provenance and integrity of memory and retrieved context.</div><div class="co">ASI06</div></div>
+<div class="card node open" data-keys="r11">
+<div class="ct">Runtime containment / kill-switch</div><div class="cn">Containing dangerous execution, cascading failures and rogue agents.</div><div class="co">ASI05 · ASI08 · ASI10</div></div>
+<div class="card node open" data-keys="r12">
+<div class="ct">3rd-party MCP attestation</div><div class="cn">Attesting and vetting external MCP servers, tools and schemas.</div><div class="co">ASI04</div></div>
+</div>
+ </div>
+</section>
+
+<section id="collab">
+ <h2><span class="num">04</span>Collaborate with us</h2>
+ <p class="sub">We are bringing several of these building blocks to an IETF hackathon to show how they relate within a common picture of agentic security.</p>
+ <div class="collab">
+  <h3>We welcome collaboration</h3>
+  <p>If you are working on agent identity, credentials and authorization, intent and provenance, tool-access policy, auditability — or on any of the open areas above such as <b>memory / context-poisoning defense</b>, <b>runtime containment</b>, <b>third-party MCP attestation</b>, or <b>goal / instruction integrity</b> — we would love to compare notes and build together.</p>
+  <p>The aim is not a single finished product but a shared, interoperable picture of how these security functions connect, so the community can contribute pieces that fit.</p>
+  <div class="meta">Reach out via this repository or the relevant IETF working groups.</div>
+ </div>
+</section>
+
+<footer>
+ Anchored to OWASP Top 10 for Agentic Applications 2026 (ASI01–ASI10, released Dec 2025).<br>
+ An overview of how our agentic-security building blocks relate · prepared for an IETF hackathon · contributions welcome.
+</footer>
+
+</div>
+<script>
+(function(){
+ var REQ={
+  r1:{n:"Agent / MCP identity",s:"active",a:"ASI03 · ASI09"},
+  r2:{n:"Credentials & lifecycle",s:"active",a:"ASI03"},
+  r3:{n:"Capability scoping",s:"early",a:"ASI03"},
+  r4:{n:"Trigger-source binding & confirmation",s:"active",a:"ASI01 · ASI09"},
+  r5:{n:"Inter-agent / MCP channel trust",s:"early",a:"ASI07"},
+  r6:{n:"Goal / instruction integrity",s:"open",a:"ASI01"},
+  r7:{n:"Tool authorization",s:"active",a:"ASI02 · ASI03"},
+  r8:{n:"Sensitive-data handling",s:"active",a:"ASI02 · ASI06"},
+  r9:{n:"Memory / context-poisoning defense",s:"open",a:"ASI06"},
+  r10:{n:"Audit & evidence chain",s:"early",a:"ASI10"},
+  r11:{n:"Runtime containment / kill-switch",s:"open",a:"ASI05 · ASI08 · ASI10"},
+  r12:{n:"3rd-party MCP attestation",s:"open",a:"ASI04"}
+ };
+ var SLBL={active:"active building blocks",early:"early-stage items",open:"open areas"};
+ function tnav(){return '<span class="tnav"><span class="lbl">SEE IN</span>'
+   +'<button class="jump" data-go="#picture">Concept</button>'
+   +'<button class="jump" data-go="#landscape">Requirements</button>'
+   +'<button class="jump" data-go="#focus">What we work on</button></span>';}
+ var nodes=[], detail=document.querySelector('.idetail'),
+     clearBtn=document.querySelector('.iclear'),
+     fbtns=Array.prototype.slice.call(document.querySelectorAll('.ifilters button'));
+ var sel=null, filt='all';
+
+ function keysOf(el){var d=el.getAttribute('data-keys')||'';return d.split(',').map(function(x){return x.trim();}).filter(Boolean);}
+ function refresh(){nodes=Array.prototype.slice.call(document.querySelectorAll('[data-keys]'));}
+ refresh();
+
+ function clearMatch(){nodes.forEach(function(n){n.classList.remove('match');});}
+ function render(){
+  clearMatch();
+  if(sel){
+   document.body.classList.add('linking');
+   nodes.forEach(function(n){if(keysOf(n).some(function(k){return sel.has(k);}))n.classList.add('match');});
+   // detail readout
+   var keys=Array.from(sel);
+   var html='<span class="lbl">LINKED THREAD</span>';
+   keys.forEach(function(k){var r=REQ[k];if(!r)return;
+     html+='<span class="rpill s-'+r.s+'"><span class="rk">'+k.toUpperCase()+'</span>'+r.n+'</span>';});
+   detail.innerHTML=html+tnav(); detail.classList.add('show'); clearBtn.classList.add('show');
+  } else if(filt!=='all'){
+   document.body.classList.add('linking');
+   var c=0;
+   nodes.forEach(function(n){if(keysOf(n).some(function(k){return REQ[k]&&REQ[k].s===filt;})){n.classList.add('match');c++;}});
+   detail.innerHTML='<span class="lbl">FILTER</span><span class="rpill s-'+filt+'">Showing '+SLBL[filt]+'</span>'+tnav();
+   detail.classList.add('show'); clearBtn.classList.add('show');
+  } else {
+   document.body.classList.remove('linking');
+   detail.classList.remove('show'); detail.innerHTML=''; clearBtn.classList.remove('show');
+  }
+ }
+ function setFilterBtns(){fbtns.forEach(function(b){b.classList.toggle('on', b.getAttribute('data-status')===filt);});}
+ function reset(){sel=null;filt='all';setFilterBtns();render();}
+
+ // click linking
+ document.addEventListener('click',function(e){
+  var jb=e.target.closest('.jump');
+  if(jb){ var t=document.querySelector(jb.getAttribute('data-go')); if(t) t.scrollIntoView({behavior:'smooth',block:'start'}); return; }
+  var b=e.target.closest('.ifilters button');
+  if(b){ filt=b.getAttribute('data-status'); sel=null; setFilterBtns(); render(); return; }
+  if(e.target.closest('.iclear')){ reset(); return; }
+  if(e.target.closest('.ibar')) return;        // other clicks inside the bar do nothing
+  if(e.target.closest('.toc a')) return;       // let nav anchors work
+  var node=e.target.closest('[data-keys]');
+  if(node){
+   var ks=keysOf(node);
+   var same = sel && ks.length===sel.size && ks.every(function(k){return sel.has(k);});
+   if(same){ reset(); }
+   else { sel=new Set(ks); filt='all'; setFilterBtns(); render(); }
+   return;
+  }
+  // click elsewhere clears (non-destructive)
+  if(sel||filt!=='all'){ reset(); }
+ });
+ document.addEventListener('keydown',function(e){ if(e.key==='Escape') reset(); });
+})();
+</script>
+</body></html>
